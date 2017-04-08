@@ -4,19 +4,21 @@ import { logger } from 'react-native-logger'
 
 type Builder = {
   url: (path: string) => string,
-  body: (body: any) => string
+  body: (body: any) => string,
+  headers: (options: Request) => Object
 }
 
-type Request = {
+export type Request = {
   path: string,
   method?: 'GET' | 'POST' | 'DELETE' | 'PUT',
   body?: string | Object,
   headers?: Object
 }
 
-type Response = {
+export type Response = {
   body: any,
-  status: number
+  status: number,
+  raw: any
 }
 
 export const createRequest = (builder: Builder) => (options: Request): Promise<Response> => {
@@ -27,7 +29,7 @@ export const createRequest = (builder: Builder) => (options: Request): Promise<R
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json;charset=UTF-8',
-    ...options.headers || {}
+    ...builder.headers(options)
   }
 
   return new Promise((resolve, reject) => {
@@ -55,7 +57,8 @@ export const createRequest = (builder: Builder) => (options: Request): Promise<R
 
         resolve({
           body: data,
-          status: resp.status
+          status: resp.status,
+          raw: resp
         })
       } catch(e) {
         log('error:', e)
