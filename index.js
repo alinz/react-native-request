@@ -27,18 +27,20 @@ export const createRequest = (builder: Builder) => (options: Request): Promise<R
   const body = options.body ? builder.body(options.body) : undefined
 
   const headers = {
-    'Accept': 'application/json',
+    Accept: 'application/json',
     'Content-Type': 'application/json;charset=UTF-8',
     ...builder.headers(options)
   }
 
   return new Promise((resolve, reject) => {
-    logger.group('api', `${method}: ${url}`, async (log) => {
+    logger.group('api', `${method}: ${url}`, async log => {
       if (body) {
         log('request budy', body)
       }
 
       try {
+        let data = ''
+
         const resp = await fetch(url, {
           headers,
           method,
@@ -52,15 +54,19 @@ export const createRequest = (builder: Builder) => (options: Request): Promise<R
         }
 
         log('status', resp.status)
-        const data = await resp.json()
-        log('data', data)
+        // status code 204 means there is no data
+        // so we won't parsing the content of received data
+        if (resp.status !== 204) {
+          data = await resp.json()
+          log('data', data)
+        }
 
         resolve({
           body: data,
           status: resp.status,
           raw: resp
         })
-      } catch(e) {
+      } catch (e) {
         log('error:', e)
         reject(e)
       }
